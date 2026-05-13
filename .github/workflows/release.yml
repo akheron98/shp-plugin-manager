@@ -58,10 +58,6 @@ jobs:
           "tag=v$ver"               >> $env:GITHUB_OUTPUT
           "installerName=SHPPluginManager-Setup-v$ver.exe" >> $env:GITHUB_OUTPUT
 
-      - name: Install Inno Setup
-        shell: pwsh
-        run: choco install innosetup --version=6.4.0 --no-progress -y
-
       - name: Build installer
         shell: pwsh
         run: |
