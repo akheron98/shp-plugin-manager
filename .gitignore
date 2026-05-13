@@ -1,0 +1,12 @@
+build/
+out/
+.vs/
+.vscode/
+.idea/
+.claude/
+CMakeUserPresets.json
+*.user
+*.suo
+*.sln
+*.vcxproj*
+*.tmp

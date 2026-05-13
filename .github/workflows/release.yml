@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to build (e.g. v0.1.1). Required for manual runs.'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Cache CMake deps
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: cmake-deps-${{ runner.os }}-juce-8.0.12-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: |
+            cmake-deps-${{ runner.os }}-juce-8.0.12-
+
+      - name: Configure
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Compute version and paths
+        id: vars
+        shell: pwsh
+        run: |
+          $rawRef = if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            '${{ inputs.version }}'
+          } else {
+            '${{ github.ref_name }}'
+          }
+          $ver = $rawRef -replace '^v',''
+          if (-not $ver) { throw "Empty version" }
+
+          $exe = (Get-ChildItem build -Recurse -Filter "SHP Plugin Manager.exe" -File | Select-Object -First 1).FullName
+          if (-not $exe) { throw "Manager exe not found" }
+
+          $rawExeOut    = Join-Path $env:GITHUB_WORKSPACE "SHPPluginManager-v$ver.exe"
+          Copy-Item $exe $rawExeOut -Force
+
+          "version=$ver"            >> $env:GITHUB_OUTPUT
+          "exePath=$exe"            >> $env:GITHUB_OUTPUT
+          "rawExeOut=$rawExeOut"    >> $env:GITHUB_OUTPUT
+          "tag=v$ver"               >> $env:GITHUB_OUTPUT
+          "installerName=SHPPluginManager-Setup-v$ver.exe" >> $env:GITHUB_OUTPUT
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --version=6.4.0 --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\iscc.exe"
+          if (-not (Test-Path $iscc)) {
+            $iscc = (Get-Command iscc.exe -ErrorAction SilentlyContinue).Source
+          }
+          if (-not $iscc) { throw "iscc.exe not found" }
+
+          New-Item -ItemType Directory -Force "$env:GITHUB_WORKSPACE\installer-out" | Out-Null
+
+          & $iscc `
+            "/DAppVersion=${{ steps.vars.outputs.version }}" `
+            "/DSourceExe=${{ steps.vars.outputs.exePath }}" `
+            "/DOutputDir=$env:GITHUB_WORKSPACE\installer-out" `
+            packaging\installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "iscc failed" }
+
+          Get-ChildItem "$env:GITHUB_WORKSPACE\installer-out" | Format-Table Name, Length
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SHPPluginManager-${{ steps.vars.outputs.version }}
+          path: |
+            ${{ steps.vars.outputs.rawExeOut }}
+            installer-out\${{ steps.vars.outputs.installerName }}
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: ${{ steps.vars.outputs.tag }}
+          files: |
+            ${{ steps.vars.outputs.rawExeOut }}
+            installer-out/${{ steps.vars.outputs.installerName }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
