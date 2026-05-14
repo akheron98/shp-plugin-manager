@@ -29,8 +29,18 @@ private:
     void handleCardAction (const PluginInfo& info);
     void showSettings (bool show);
 
-    juce::TextButton refreshButton  { "Refresh" };
-    juce::TextButton settingsButton { "Settings" };
+    void rebuildCards();
+    void refreshBulkButtons();
+    void runBulkAction (bool updatesOnly);
+    void installNext (std::shared_ptr<std::vector<juce::String>> queue);
+
+    juce::TextButton refreshButton    { "Refresh" };
+    juce::TextButton settingsButton   { "Settings" };
+    juce::TextButton installAllButton { "Install All" };
+    juce::TextButton updateAllButton  { "Update All" };
+    int installableCount { 0 };
+    int updatableCount   { 0 };
+    bool bulkInProgress  { false };
 
     std::unique_ptr<CardList> cardList;
     juce::Viewport viewport;

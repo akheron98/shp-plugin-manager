@@ -63,6 +63,14 @@ MainComponent::MainComponent()
     addAndMakeVisible (settingsButton);
     settingsButton.onClick = [this] { showSettings (true); };
 
+    addChildComponent (installAllButton);
+    installAllButton.onClick = [this] { runBulkAction (false); };
+
+    addChildComponent (updateAllButton);
+    updateAllButton.setColour (juce::TextButton::buttonColourId, dust);
+    updateAllButton.setColour (juce::TextButton::textColourOffId, juce::Colours::white);
+    updateAllButton.onClick = [this] { runBulkAction (true); };
+
     cardList = std::make_unique<CardList>();
     viewport.setViewedComponent (cardList.get(), false);
     viewport.setScrollBarsShown (true, false);
@@ -126,6 +134,8 @@ void MainComponent::showSettings (bool show)
         viewport.setVisible (false);
         refreshButton.setVisible (false);
         settingsButton.setVisible (false);
+        installAllButton.setVisible (false);
+        updateAllButton.setVisible (false);
         resized();
     }
     else
@@ -134,6 +144,7 @@ void MainComponent::showSettings (bool show)
         viewport.setVisible (true);
         refreshButton.setVisible (true);
         settingsButton.setVisible (true);
+        refreshBulkButtons();
         resized();
         repaint();
     }
@@ -206,21 +217,108 @@ void MainComponent::rebuildFromResult (RegistryFetchResult result)
     }
 
     manifestByPluginId.clear();
-    std::vector<PluginInfo> infos;
-    infos.reserve (result.plugins.size());
     for (auto& r : result.plugins)
-    {
         manifestByPluginId[r.id] = r;
-        infos.push_back (toPluginInfo (r));
-    }
 
-    cardList->setPlugins (std::move (infos),
-                          [this] (const PluginInfo& info) { handleCardAction (info); });
+    rebuildCards();
 
     loadState = LoadState::loaded;
     loadStatusMessage = {};
     repaint();
     resized();
+}
+
+void MainComponent::rebuildCards()
+{
+    std::vector<PluginInfo> infos;
+    infos.reserve (manifestByPluginId.size());
+    installableCount = 0;
+    updatableCount   = 0;
+    for (auto& [id, r] : manifestByPluginId)
+    {
+        auto info = toPluginInfo (r);
+        if (info.status == PluginInfo::Status::notInstalled)    ++installableCount;
+        if (info.status == PluginInfo::Status::updateAvailable) ++updatableCount;
+        infos.push_back (std::move (info));
+    }
+    cardList->setPlugins (std::move (infos),
+                          [this] (const PluginInfo& i) { handleCardAction (i); });
+    refreshBulkButtons();
+}
+
+void MainComponent::refreshBulkButtons()
+{
+    const bool showInstall = installableCount > 0;
+    const bool showUpdate  = updatableCount   > 0;
+    installAllButton.setVisible (showInstall);
+    updateAllButton.setVisible (showUpdate);
+    installAllButton.setEnabled (! bulkInProgress && showInstall);
+    updateAllButton.setEnabled  (! bulkInProgress && showUpdate);
+    installAllButton.setButtonText ("Install All (" + juce::String (installableCount) + ")");
+    updateAllButton.setButtonText  ("Update All ("  + juce::String (updatableCount)   + ")");
+}
+
+void MainComponent::runBulkAction (bool updatesOnly)
+{
+    auto queue = std::make_shared<std::vector<juce::String>>();
+    for (auto& [id, r] : manifestByPluginId)
+    {
+        auto info = toPluginInfo (r);
+        if (updatesOnly ? info.status == PluginInfo::Status::updateAvailable
+                        : info.status == PluginInfo::Status::notInstalled)
+            queue->push_back (id);
+    }
+    if (queue->empty())
+        return;
+
+    bulkInProgress = true;
+    refreshBulkButtons();
+    installNext (queue);
+}
+
+void MainComponent::installNext (std::shared_ptr<std::vector<juce::String>> queue)
+{
+    if (queue->empty())
+    {
+        bulkInProgress = false;
+        refreshBulkButtons();
+        return;
+    }
+    auto id = queue->front();
+    queue->erase (queue->begin());
+
+    auto it = manifestByPluginId.find (id);
+    if (it == manifestByPluginId.end())
+    {
+        installNext (queue);
+        return;
+    }
+    const auto plugin = it->second;
+    const auto name   = plugin.name;
+
+    installer.install (plugin, [this, name, queue] (InstallProgress p)
+    {
+        loadStatusMessage = name + " — " + p.message;
+        repaint();
+
+        if (p.stage == InstallProgress::Stage::done)
+        {
+            tracker.refresh();
+            rebuildCards();
+            resized();
+            installNext (queue);
+        }
+        else if (p.stage == InstallProgress::Stage::failed)
+        {
+            juce::NativeMessageBox::showAsync (juce::MessageBoxOptions()
+                .withIconType (juce::MessageBoxIconType::WarningIcon)
+                .withTitle ("Install failed")
+                .withMessage (name + ": " + p.message
+                              + (p.errorDetail.isNotEmpty() ? "\n\n" + p.errorDetail : juce::String()))
+                .withButton ("OK"), nullptr);
+            installNext (queue);
+        }
+    });
 }
 
 void MainComponent::handleCardAction (const PluginInfo& info)
@@ -246,12 +344,7 @@ void MainComponent::handleCardAction (const PluginInfo& info)
         if (p.stage == InstallProgress::Stage::done)
         {
             tracker.refresh();
-            // Rebuild from cached manifest so version pills update.
-            std::vector<PluginInfo> infos;
-            for (auto& [id, r] : manifestByPluginId)
-                infos.push_back (toPluginInfo (r));
-            cardList->setPlugins (std::move (infos),
-                                  [this] (const PluginInfo& i) { handleCardAction (i); });
+            rebuildCards();
             resized();
             juce::Timer::callAfterDelay (2500, [this] { loadStatusMessage = {}; repaint(); });
         }
@@ -376,6 +469,20 @@ void MainComponent::resized()
                          || loadStatusMessage.isNotEmpty();
     if (needBanner)
         bounds.removeFromTop (32);
+
+    if (installAllButton.isVisible() || updateAllButton.isVisible())
+    {
+        auto toolbar = bounds.removeFromTop (34);
+        bounds.removeFromTop (8);
+        if (updateAllButton.isVisible())
+            updateAllButton.setBounds (toolbar.removeFromRight (160).withHeight (30));
+        if (installAllButton.isVisible())
+        {
+            if (updateAllButton.isVisible())
+                toolbar.removeFromRight (8);
+            installAllButton.setBounds (toolbar.removeFromRight (160).withHeight (30));
+        }
+    }
 
     viewport.setBounds (bounds);
     cardList->setSize (bounds.getWidth() - viewport.getScrollBarThickness(),
