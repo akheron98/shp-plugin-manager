@@ -24,6 +24,7 @@ private:
     enum class LoadState { idle, loading, loaded, error };
 
     void startFetch();
+    void checkForManagerUpdate();
     void rebuildFromResult (RegistryFetchResult result);
     PluginInfo toPluginInfo (const RegistryPlugin& r) const;
     void handleCardAction (const PluginInfo& info);

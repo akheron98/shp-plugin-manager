@@ -58,7 +58,7 @@ MainComponent::MainComponent()
                                             BinaryData::shp_logo_v3_pngSize);
 
     addAndMakeVisible (refreshButton);
-    refreshButton.onClick = [this] { startFetch(); };
+    refreshButton.onClick = [this] { startFetch(); checkForManagerUpdate(); };
 
     addAndMakeVisible (settingsButton);
     settingsButton.onClick = [this] { showSettings (true); };
@@ -102,7 +102,11 @@ MainComponent::MainComponent()
 
     tracker.refresh();
     startFetch();
+    checkForManagerUpdate();
+}
 
+void MainComponent::checkForManagerUpdate()
+{
     const auto myVersion = juce::JUCEApplication::getInstance()->getApplicationVersion();
     updateChecker.check (myVersion, [this] (ManagerUpdateInfo info)
     {
