@@ -26,14 +26,7 @@ private:
     juce::ToggleButton scopeSysBtn  { "System (Program Files, needs UAC)" };
     juce::ToggleButton scopeCustBtn { "Custom path" };
     juce::Label    customPathDisplay;
-    juce::TextButton browseBtn      { "Browse…" };
-
-    juce::Label    tokenLabel       { {}, "GITHUB TOKEN (OPTIONAL)" };
-    juce::TextEditor tokenEditor;
-    juce::Label    tokenHint        { {}, "Avoids the 60 req/hr unauthenticated rate limit. Scope: public_repo." };
-
-    juce::Label    registryLabel    { {}, "MANIFEST URL" };
-    juce::TextEditor registryEditor;
+    juce::TextButton browseBtn      { "Browse..." };
 
     juce::TextButton saveBtn  { "Save" };
     juce::TextButton closeBtn { "Back" };

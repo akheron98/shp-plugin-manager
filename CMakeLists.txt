@@ -65,6 +65,10 @@ target_sources(SHPPluginManager
         Source/ShpLookAndFeel.cpp
         Source/Theme.h)
 
+if (MSVC)
+    target_compile_options(SHPPluginManager PRIVATE /utf-8)
+endif()
+
 target_compile_definitions(SHPPluginManager
     PUBLIC
         JUCE_WEB_BROWSER=0

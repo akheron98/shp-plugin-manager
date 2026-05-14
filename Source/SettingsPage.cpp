@@ -33,17 +33,7 @@ void styleEditor (juce::TextEditor& e)
 SettingsPage::SettingsPage (Settings& s) : settings (s)
 {
     styleSectionLabel (pathLabel);
-    styleSectionLabel (tokenLabel);
-    styleSectionLabel (registryLabel);
     styleValueLabel (customPathDisplay);
-
-    styleEditor (tokenEditor);
-    tokenEditor.setPasswordCharacter ((juce_wchar) 0x2022);
-
-    styleEditor (registryEditor);
-
-    tokenHint.setFont (monoFont (9.5f));
-    tokenHint.setColour (juce::Label::textColourId, dimBone);
 
     for (auto* t : { &scopeUserBtn, &scopeSysBtn, &scopeCustBtn })
     {
@@ -57,11 +47,6 @@ SettingsPage::SettingsPage (Settings& s) : settings (s)
     addAndMakeVisible (pathLabel);
     addAndMakeVisible (customPathDisplay);
     addAndMakeVisible (browseBtn);
-    addAndMakeVisible (tokenLabel);
-    addAndMakeVisible (tokenEditor);
-    addAndMakeVisible (tokenHint);
-    addAndMakeVisible (registryLabel);
-    addAndMakeVisible (registryEditor);
     addAndMakeVisible (saveBtn);
     addAndMakeVisible (closeBtn);
 
@@ -90,9 +75,6 @@ void SettingsPage::applyToUi()
     if (cp.isEmpty())
         cp = Settings::getUserLocalVst3Dir().getFullPathName();
     customPathDisplay.setText (cp, juce::dontSendNotification);
-
-    tokenEditor.setText (settings.getGithubToken(), juce::dontSendNotification);
-    registryEditor.setText (settings.getRegistryUrl(), juce::dontSendNotification);
 }
 
 void SettingsPage::saveFromUi()
@@ -102,8 +84,6 @@ void SettingsPage::saveFromUi()
     if (scopeCustBtn.getToggleState())  settings.setInstallScope (Settings::InstallScope::custom);
 
     settings.setCustomInstallPath (juce::File (customPathDisplay.getText()));
-    settings.setGithubToken (tokenEditor.getText());
-    settings.setRegistryUrl (registryEditor.getText());
 
     settings.save();
 }
@@ -177,12 +157,4 @@ void SettingsPage::resized()
         customPathDisplay.setBounds (r.reduced (4));
         bounds.removeFromTop (12);
     }
-
-    place (tokenLabel, 18);
-    place (tokenEditor, 30);
-    place (tokenHint, 16);
-    bounds.removeFromTop (8);
-
-    place (registryLabel, 18);
-    place (registryEditor, 30);
 }
