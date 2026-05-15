@@ -41,8 +41,12 @@ RegistryFetchResult RegistryClient::fetchBlocking (juce::String manifestUrl,
 {
     RegistryFetchResult result;
 
+    juce::URL url (manifestUrl);
+    if (!url.hasQueryParameter ("_cb"))
+        url = url.withParameter ("_cb", juce::String (juce::Time::currentTimeMillis()));
+
     juce::String fetchError;
-    const auto manifestJson = httpGet (juce::URL (manifestUrl), githubToken, fetchError);
+    const auto manifestJson = httpGet (url, githubToken, fetchError);
 
     if (manifestJson.isEmpty())
     {
