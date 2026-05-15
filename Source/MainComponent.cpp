@@ -98,7 +98,7 @@ MainComponent::MainComponent()
             });
     };
 
-    setSize (820, 600);
+    setSize (820, 800);
 
     tracker.refresh();
     startFetch();
