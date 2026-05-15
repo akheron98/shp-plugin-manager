@@ -15,6 +15,15 @@ PluginCardComponent::PluginCardComponent (PluginInfo i)
         actionButton.onClick = [this] { if (onAction) onAction (info); };
     }
 
+    if (info.manualUrl.isNotEmpty())
+    {
+        addAndMakeVisible (manualButton);
+        manualButton.setButtonText ("MANUEL");
+        manualButton.setColour (juce::TextButton::buttonColourId, shp::theme::surface);
+        manualButton.setColour (juce::TextButton::textColourOffId, shp::theme::bone.withAlpha(0.86f));
+        manualButton.onClick = [this] { juce::URL (info.manualUrl).launchInDefaultBrowser(); };
+    }
+
     logo = juce::ImageCache::getFromMemory (BinaryData::shp_logo_v3_png,
                                             BinaryData::shp_logo_v3_pngSize);
 }

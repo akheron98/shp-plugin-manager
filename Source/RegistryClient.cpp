@@ -47,6 +47,9 @@ RegistryFetchResult RegistryClient::fetchBlocking (juce::String manifestUrl,
     juce::String fetchError;
     const auto manifestJson = httpGet (url, githubToken, fetchError);
 
+    juce::File logFile ("C:\\Users\\Jotnar\\AppData\\Roaming\\SHP\\manager\\debug.log");
+    logFile.replaceWithText ("URL: " + url.toString(true) + "\nError: " + fetchError + "\nJSON:\n" + manifestJson);
+
     if (manifestJson.isEmpty())
     {
         result.manifestError = fetchError.isNotEmpty() ? fetchError

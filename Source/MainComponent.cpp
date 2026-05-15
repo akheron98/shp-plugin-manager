@@ -239,13 +239,21 @@ void MainComponent::rebuildCards()
     infos.reserve (manifestByPluginId.size());
     installableCount = 0;
     updatableCount   = 0;
+    
+    juce::String debugOut;
+
     for (auto& [id, r] : manifestByPluginId)
     {
         auto info = toPluginInfo (r);
+        debugOut += id + " URL: " + info.manualUrl + "\n";
         if (info.status == PluginInfo::Status::notInstalled)    ++installableCount;
         if (info.status == PluginInfo::Status::updateAvailable) ++updatableCount;
         infos.push_back (std::move (info));
     }
+    
+    juce::File logFile ("C:\\Users\\Jotnar\\AppData\\Roaming\\SHP\\manager\\debug_ui.log");
+    logFile.replaceWithText (debugOut);
+
     cardList->setPlugins (std::move (infos),
                           [this] (const PluginInfo& i) { handleCardAction (i); });
     refreshBulkButtons();
