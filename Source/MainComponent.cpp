@@ -190,8 +190,11 @@ PluginInfo MainComponent::toPluginInfo (const RegistryPlugin& r) const
         if (bundleBase.endsWithIgnoreCase(".vst3"))
             bundleBase = bundleBase.dropLastCharacters(5);
         
+        juce::String assetName = bundleBase + " - Manual v" + targetVersion + ".pdf";
+        assetName = assetName.replace(" ", ".");
+
         juce::String tag = r.tagPrefix.isNotEmpty() ? r.tagPrefix + targetVersion : "v" + targetVersion;
-        info.manualUrl = "https://github.com/" + r.githubRepo + "/releases/download/" + tag + "/" + juce::URL::addEscapeChars(bundleBase + " - Manual v" + targetVersion + ".pdf", true);
+        info.manualUrl = "https://github.com/" + r.githubRepo + "/releases/download/" + tag + "/" + juce::URL::addEscapeChars(assetName, true);
     }
 
     return info;
