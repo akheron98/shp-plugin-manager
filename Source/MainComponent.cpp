@@ -160,7 +160,6 @@ PluginInfo MainComponent::toPluginInfo (const RegistryPlugin& r) const
     info.id          = r.id;
     info.name        = r.name;
     info.description = r.description;
-    info.manualUrl   = r.manualUrl;
 
     if (auto installed = tracker.get (r.id))
         info.installedVersion = installed->version;
@@ -182,6 +181,17 @@ PluginInfo MainComponent::toPluginInfo (const RegistryPlugin& r) const
             info.status = PluginInfo::Status::upToDate;
         else
             info.status = PluginInfo::Status::updateAvailable;
+    }
+
+    juce::String targetVersion = info.installedVersion.isNotEmpty() ? info.installedVersion : info.latestVersion;
+    if (targetVersion.isNotEmpty() && r.githubRepo.isNotEmpty())
+    {
+        juce::String bundleBase = r.vst3BundleName;
+        if (bundleBase.endsWithIgnoreCase(".vst3"))
+            bundleBase = bundleBase.dropLastCharacters(5);
+        
+        juce::String tag = r.tagPrefix.isNotEmpty() ? r.tagPrefix + targetVersion : "v" + targetVersion;
+        info.manualUrl = "https://github.com/" + r.githubRepo + "/releases/download/" + tag + "/" + juce::URL::addEscapeChars(bundleBase + " - Manual v" + targetVersion + ".pdf", true);
     }
 
     return info;
