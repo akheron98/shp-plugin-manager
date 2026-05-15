@@ -160,6 +160,7 @@ PluginInfo MainComponent::toPluginInfo (const RegistryPlugin& r) const
     info.id          = r.id;
     info.name        = r.name;
     info.description = r.description;
+    info.manualUrl   = r.manualUrl;
 
     if (auto installed = tracker.get (r.id))
         info.installedVersion = installed->version;

@@ -136,6 +136,7 @@ bool RegistryClient::parseManifest (const juce::String& json,
         p.vst3BundleName = v.getProperty ("vst3_bundle_name", {}).toString();
         p.description    = v.getProperty ("description", {}).toString();
         p.iconUrl        = v.getProperty ("icon_url", {}).toString();
+        p.manualUrl      = v.getProperty ("manual_url", {}).toString();
 
         if (p.id.isNotEmpty() && p.githubRepo.isNotEmpty())
             outPlugins.push_back (std::move (p));

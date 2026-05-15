@@ -16,5 +16,6 @@ public:
 private:
     PluginInfo info;
     juce::TextButton actionButton;
+    juce::TextButton manualButton;
     juce::Image logo;
 };

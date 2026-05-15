@@ -18,6 +18,7 @@ struct PluginInfo
     juce::String description;
     juce::String installedVersion;
     juce::String latestVersion;
+    juce::String manualUrl;
     juce::String errorMessage;          // populated when Status::error or Status::noRelease
     Status status { Status::notInstalled };
 

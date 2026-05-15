@@ -33,7 +33,7 @@ public:
     SHPPluginManagerApplication() = default;
 
     const juce::String getApplicationName() override       { return "SHP Plugin Manager"; }
-    const juce::String getApplicationVersion() override    { return "0.1.3"; }
+    const juce::String getApplicationVersion() override    { return "0.1.4"; }
     bool moreThanOneInstanceAllowed() override             { return true; } // helper mode
 
     void initialise (const juce::String& commandLine) override

@@ -118,5 +118,14 @@ void PluginCardComponent::paint (juce::Graphics& g)
 void PluginCardComponent::resized()
 {
     auto rightArea = juce::Rectangle<int> (getWidth() - 200, 0, 200, getHeight());
-    actionButton.setBounds (rightArea.withSizeKeepingCentre (160, 30).translated (-10, 30));
+    auto buttonRect = rightArea.withSizeKeepingCentre (160, 30).translated (-10, 30);
+    
+    actionButton.setBounds (buttonRect);
+
+    if (info.manualUrl.isNotEmpty())
+    {
+        // Place the manual button to the left of the action button
+        auto manualRect = buttonRect.translated (-100, 0).withWidth (90);
+        manualButton.setBounds (manualRect);
+    }
 }

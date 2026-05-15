@@ -14,6 +14,7 @@ struct RegistryPlugin
     juce::String vst3BundleName;    // e.g. "SHP Vocal Strip.vst3"
     juce::String description;
     juce::String iconUrl;
+    juce::String manualUrl;
 
     // Resolved from GitHub Releases API
     juce::String latestVersion;     // tag without prefix; empty if no release
